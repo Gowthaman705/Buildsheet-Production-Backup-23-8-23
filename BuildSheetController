@@ -1,0 +1,177 @@
+/*============================================================================================================
+*Class Name     : BuildSheetController
+*Description    : All the implementations related to show the Build Sheet Remake Test report.
+*Company        : Merfantz Technologies Pvt Ltd
+*Date           : 6th Feb, 2020
+*Version        : 1.0
+*Change History : Initial controller class
+*Methods        : public list<Selectoption> getItems()
+public void quotes()
+public void pdf()
+*============================================================================================================*/
+public with sharing class BuildSheetController {
+    public string Slectedproduction{get;set;}
+    public string SlectedQuote{get;set;}
+    public list<Selectoption> Quotes{get;set;}
+    public boolean quoteenable{get;set;}
+    public Production__c prodDetail{get;set;}
+    public Production__c collectprod{get;set;}
+    public List<SBQQ__QuoteLine__c> qltmList{get;set;}
+    public boolean flag{get;set;}
+    public string actSerialNumber{get;set;}   
+    public string msg{get;set;} 
+    public list<SBQQ__Quote__c> quoteslist{get;set;} 
+    
+    public BuildSheetController(){
+        msg='';  
+        quoteslist = new  list<SBQQ__Quote__c>();  
+        String Slectedproduction  =ApexPages.currentPage().getParameters().get('Slectedproduction');
+        String SlectedQuote=ApexPages.currentPage().getParameters().get('SlectedQuote');
+        
+        system.debug(Slectedproduction+'---'+SlectedQuote);
+        if(Slectedproduction!=null && Slectedproduction!='' && SlectedQuote!=null && SlectedQuote!=''){
+            prodDetail=[Select id,name,Stock_Number__c,Sales_Rep__c,ACT_Serial_Number__c,Tech_Notes__c,Special_Instructions__c,Work_Ticket_Number__c,
+                        Stock_Outline_Summary__c,Blower_Serial_Number__c,Ship_Date_New__c,Freight_Instructions_del__c,SHIP_TO_ADDRESS__c,
+                        Opportunity_Name__C,Opportunity_Name__r.Freight_Instructions__c,Opportunity_Name__r.Ship_To_Address__c,Opportunity_Name__r.Special_Instructions__c,
+                        ACT_Filters_in_Collector__c,Opportunity_Name__r.ACT_Filters_in_Collector__r.name,Opportunity_Name__r.ACT_Filters_in_Collector2__c,
+                        Opportunity_Name__r.Timer_Board__c,ACT_Filters_in_Collector__r.name,Timer_Board__c,
+                        Voltage__c,Opportunity_Name__r.Voltage__c,Opportunity_Name__r.ACT_Controls__c,Opportunity_Name__r.Primary_Contact_Email__c ,Primary_Contact_Name__c,
+                        ACT_Controls__c,ACT_Filters_in_Collector2__c,Opportunity_Name__r.Stock_Number1__c,Opportunity_Name__r.Account.Name from Production__c where id=:Slectedproduction  limit 1];
+            qltmList=new  List<SBQQ__QuoteLine__c>();
+            qltmList=[Select id,SBQQ__Quantity__c,SBQQ__ProductFamily__c,name,SBQQ__CustomerPrice__c,SBQQ__Description__c,SBQQ__ProductCode__c,SBQQ__NetTotal__c,SBQQ__ProductName__c,SBQQ__Quote__r.name from  SBQQ__QuoteLine__c where SBQQ__Quote__c=:SlectedQuote];
+        }
+    }
+    
+    
+    
+    /*====================================================
+*Method Name     : getItems
+*Description     : This method collects Productions which having given ACT serial number from UI and having the opportunity and show these productions in picklist. 
+*Arguments       : No Argument
+====================================================*/
+    public list<Selectoption> getItems() {
+        list<Selectoption> productions = new list<Selectoption>();
+        if(actSerialNumber!=null && actSerialNumber!=''){
+            
+            quoteenable=false;
+            quoteslist = new  list<SBQQ__Quote__c>();  
+            Quotes=new List<Selectoption>(); 
+            //Productions.add(new Selectoption('None', 'None'));
+            
+            for(Production__c productionvalues:[select id, name, Opportunity_Name__c,recordtype.id from production__c where ACT_Serial_Number__c=:actSerialNumber and recordtype.id=:System.Label.ACT_RecordTypeId order by name]){
+                productions.add(new Selectoption(productionvalues.id, productionvalues.name));
+            }
+            if(productions.size()==0 && actSerialNumber==null && actSerialNumber==''){
+                msg='';  quoteenable =true;
+            }
+            else if(productions.size()==0 && actSerialNumber!=null && actSerialNumber!=''){
+                
+                system.debug(quoteenable);  quoteenable =true;
+                msg='Sorry, productions or quotes are not available for this ACT Serial Number';
+            }
+            else{
+                
+                if(actSerialNumber!=null && actSerialNumber!='' && productions.size()>0){
+                    String firstele=productions[0].getValue();
+                    Production__c firstProd=[Select id,Opportunity_Name__C from Production__c where id=:firstele]; 
+                    
+                    if(firstele!=null && firstele!=''){
+                        msg='';
+                        
+                        for(SBQQ__Quote__c quotevalues:[select id, name  from SBQQ__Quote__c where SBQQ__Opportunity2__c=:firstProd.Opportunity_Name__C and SBQQ__Primary__c=true order by name ]){
+                            //Quotes.add(new Selectoption(quotevalues.id, quotevalues.name));
+                            quoteslist.add(quotevalues);
+                            system.debug('**************'+quotevalues.name);
+                        }
+                        if(quoteslist.size()==0)
+                            msg=' No Primary Quote Available on Selected Production';
+                    }
+                    
+                }
+                system.debug(quoteenable+'**************'+quoteslist.size());
+                quoteenable =false; 
+                
+            }
+        }//if
+        else{
+            msg='';
+        }
+        return productions;
+    }
+    /*====================================================
+*Method Name     : quotes
+*Description     : This method collects Quotes based on chosen Production's opportunity quote and show in picklist when click Search Quote button.
+*Arguments       :  No Argument
+====================================================*/
+    public void quotes(){
+        qltmList=new List<SBQQ__QuoteLine__c>();
+        try{
+            Quotes=new List<Selectoption>();
+            
+            system.debug('--------------'+Slectedproduction);
+            if(Slectedproduction!='' && Slectedproduction!=null){
+                collectprod=[Select id,name,ACT_Serial_Number__c,Tech_Notes__c,Special_Instructions__c,Stock_Outline_Summary__c,Blower_Serial_Number__c,Ship_Date_New__c,Freight_Instructions_del__c,SHIP_TO_ADDRESS__c,Opportunity_Name__C from Production__c where id=:Slectedproduction  limit 1];
+                
+                for(SBQQ__Quote__c quotevalues:[select id, name  from SBQQ__Quote__c where SBQQ__Opportunity2__c=:collectprod.Opportunity_Name__C and SBQQ__Primary__c=true order by name ]){
+                    //  Quotes.add(new Selectoption(quotevalues.id, quotevalues.name));
+                    quoteslist.add(quotevalues);
+                    system.debug('**************'+quotevalues.name);
+                }
+                
+                msg='';
+                if(quoteslist.size()==0 && Slectedproduction!=null){
+                    msg=' No Primary Quote Available on Selected Production';
+                    quoteenable =true;   
+                }   
+                else    
+                    quoteenable =false;  
+                
+            }           
+        }
+        catch(System.QueryException e){   
+            system.debug(e);        
+            msg='Sorry, production not available for this ACT Serial Number';        
+        }
+        catch(Exception e){ 
+            system.debug(e);          
+            msg='Something went wrong. Please try again';        
+        }
+    }
+    
+    /*====================================================
+*Method Name     : pdf
+*Description     : This method collects Quote line items and show in the PDF Productions, Quote and Quote line items.
+*Arguments       : No Argument
+====================================================*/
+    
+    public pagereference pdf(){
+        try{
+            
+            prodDetail=[Select id,name,Sales_Rep__c,ACT_Serial_Number__c,Tech_Notes__c,Special_Instructions__c,
+                        Stock_Outline_Summary__c,Blower_Serial_Number__c,Ship_Date_New__c,Freight_Instructions_del__c,SHIP_TO_ADDRESS__c,
+                        Opportunity_Name__C,Opportunity_Name__r.Freight_Instructions__c,Opportunity_Name__r.Ship_To_Address__c,Opportunity_Name__r.Special_Instructions__c,
+                        ACT_Filters_in_Collector__c,Opportunity_Name__r.ACT_Filters_in_Collector__r.name,Opportunity_Name__r.ACT_Filters_in_Collector2__c,
+                        Opportunity_Name__r.Timer_Board__c,ACT_Filters_in_Collector__r.name,Timer_Board__c,
+                        Voltage__c,Opportunity_Name__r.Voltage__c,Opportunity_Name__r.ACT_Controls__c, Opportunity_Name__r.Primary_Contact_Email__c ,Primary_Contact_Name__c ,
+                        ACT_Controls__c,ACT_Filters_in_Collector2__c,Opportunity_Name__r.Stock_Number1__c,Opportunity_Name__r.Account.Name from Production__c where id=:Slectedproduction  limit 1]; //   ];
+            
+            qltmList=[Select id,SBQQ__Quantity__c,name,SBQQ__CustomerPrice__c,SBQQ__Description__c,SBQQ__ProductCode__c,SBQQ__NetTotal__c,SBQQ__ProductName__c,SBQQ__Quote__r.name from  SBQQ__QuoteLine__c where SBQQ__Quote__c=:quoteslist[0].id];
+            
+            
+            PageReference pg = new PageReference('/apex/BuildsheetremakePDF?Slectedproduction='+Slectedproduction+'&SlectedQuote='+quoteslist[0].id);
+            pg.setRedirect(true);
+            return pg;
+            
+            
+        }
+        
+        catch(Exception e){ 
+            system.debug(e);          
+            msg='Something went wrong. Please try again'; 
+            return null;   
+        }
+        
+    }
+    
+    
+}
