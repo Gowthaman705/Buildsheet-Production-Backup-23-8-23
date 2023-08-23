@@ -1,0 +1,55 @@
+/*============================================================================================================
+*Class Name     : OppAcknowledgmentExtTest
+*Description    : All the implementations related to Opportunity Triggers should be handled here
+*Company        : Merfantz Technologies Pvt Ltd
+*Date           : 19th Dec, 2022
+*Version        : 1.0
+*============================================================================================================*/
+@isTest(SeeAllData=true)
+public class OppAcknowledgmentExtTest{
+    static testmethod void testOrder(){
+        Account Acc=new Account();
+        Acc.Name='Demo Customer';
+        Acc.ShippingStreet='Test';
+        Acc.ShippingCity='Test';
+        Acc.ShippingState='Test';
+        Acc.ShippingCountry='IN';
+        Acc.ShippingPostalCode='600096';
+        insert Acc;
+        system.assertequals('Demo Customer',Acc.Name);
+        
+        Contact c=new Contact();
+        c.firstname='Test1';
+        c.lastname='Test2';
+        c.account=acc;
+        System.assertEquals(acc,c.account);
+        c.email='Test@gmail.om';
+        insert c;
+        
+        Opportunity Opp=new Opportunity();
+        Opp.Name='Demo Opportunity';
+        Opp.StageName='Qualification';
+        Opp.CloseDate=system.today();
+        Opp.Special_Instructions__c='Test';
+        Opp.Primary_Contact__c=c.id;
+        insert Opp;
+        
+        Product2 pd = new Product2();
+        pd.name='testproduct';
+        pd.IsActive = true;
+        insert pd; 
+        Id standardPriceBookId = Test.getStandardPricebookId();
+        
+        PricebookEntry pbe = new PricebookEntry(Pricebook2Id=standardPriceBookId, Product2Id=pd.Id, UnitPrice=99, isActive=true);
+        insert pbe;
+        Product2 p2ex = [SELECT Name FROM Product2 WHERE Id = :pd.Id];
+        System.assertEquals(pd.Name,p2ex.Name);
+        
+        OpportunityLineItem ordPd = new OpportunityLineItem(PriceBookEntryId=pbe.Id, OpportunityId=Opp.Id, Quantity=1, UnitPrice=99);
+        insert ordPd;    
+        
+        ApexPages.CurrentPage().getParameters().put('id',Opp.id);
+        ApexPages.StandardController ord = new ApexPages.StandardController(Opp);
+        OppAcknowledgmentExt ack =new OppAcknowledgmentExt(ord);
+    }
+}
