@@ -1,0 +1,255 @@
+@isTest(seeAlldata=true)
+/*============================================================================================================
+*Class Name     : BuildSheetControllerTest
+*Description    : All the implementations related test BuildSheetController
+*Company        : Merfantz Technologies Pvt Ltd
+*Date           : 6th Feb, 2020
+*Version        : 1.0
+*Change History : Initial Test class
+*Methods        : public @isTest static void method1()
+                  public @isTest static void method2()
+                  public @isTest static void method3()
+*============================================================================================================*/
+public class BuildSheetControllerTest{
+
+/*====================================================
+*Method Name     : method1
+*Description     : This method test BuilSheetController if conditions.
+*Arguments       : No Argument
+====================================================*/
+  public @isTest static void method1(){
+     
+     //insert account 
+      Account Acc=new Account();
+        Acc.Name='Demo Customer';
+        Acc.customer_type__c='Dealer';
+        insert acc;
+        system.assertequals('Demo Customer',acc.Name);
+        
+     //insert opportunity
+     Opportunity Opp=new Opportunity();
+        Opp.Name='Demo Opportunity';
+        Opp.StageName='Closed Released';
+        Opp.CloseDate=system.today();
+        Opp.Special_Instructions__c='Test';
+        Opp.ACT_Serial_Number__c='ACT11990';
+        Opp.Amount=1200;
+        Opp.account=acc;
+        Opp.Dealer__c=acc.id;
+        opp.stagename='Qualification';
+        insert Opp;
+        system.assertequals('Demo Opportunity',Opp.Name);
+     
+     //insert quote and quoteline item
+     Id PricebookId=Test.getStandardPricebookId(); 
+     system.debug(PricebookId);
+        PricebookEntry pbID = [select Id,Product2Id from PricebookEntry where pricebook2id=:PricebookId and isActive = True limit 1];
+        
+        SBQQ__Quote__c Qot=new SBQQ__Quote__c();
+        Qot.SBQQ__PricebookId__c=PricebookId;
+        Qot.SBQQ__Opportunity2__c=opp.id;
+        Qot.SBQQ__Primary__c=true;
+        insert Qot;
+        system.assertequals(PricebookId,Qot.SBQQ__PricebookId__c);
+        
+        SBQQ__QuoteLine__c Qline=new SBQQ__QuoteLine__c();
+        Qline.SBQQ__Product__c=pbID.Product2Id;
+        Qline.SBQQ__ListPrice__c=123;
+        Qline.SBQQ__Quantity__c=1;
+        Qline.SBQQ__Quote__c=Qot.id;
+        insert Qline;
+        system.assertequals(Qot.id,Qline.SBQQ__Quote__c);
+        
+      //insert production
+      Production__c Prds=new Production__c();
+        Prds.Account__c=Acc.id;
+        Prds.Opportunity_Name__c=Opp.id;
+        Prds.Status__c='To Be Processed';
+        Prds.Stock_Outline_Summary__c='Test';
+        Prds.Special_Instructions__c='Test';
+        //Prds.Production_Type__c='ACT Stock Unit On Order';
+        Prds.Special_Instructions_Update__c='Test';
+        insert Prds;
+        system.assertequals(Opp.id,Prds.Opportunity_Name__c);
+        Prds.Status__c='ACT New Units';
+        update prds;
+        system.assertequals('ACT New Units',Prds.Status__c);
+        
+        test.starttest();
+        PageReference pageref = Page.Buildsheetremake;
+        Test.setCurrentPage(pageref);
+        BuildSheetController controller=new BuildSheetController();
+        
+        controller.getItems();
+        
+        controller.actSerialNumber='ACT11990';
+        controller.getItems();
+        Production__c prod=[Select id,name from Production__c where id=:Prds.id];
+        
+        controller.Slectedproduction=prod.id;
+        
+        controller.quotes();
+        controller.SlectedQuote=Qot.id;
+        controller.pdf();
+     
+        test.stoptest();
+  }
+/*====================================================
+*Method Name     : method2
+*Description     : This method test BuilSheetController else conditions.
+*Arguments       : No Argument
+====================================================*/
+  
+  public @isTest static void method2(){
+     
+     //insert account 
+      Account Acc=new Account();
+        Acc.Name='Demo Customer';
+        Acc.customer_type__c='Dealer';
+        insert acc;
+        system.assertequals('Demo Customer',acc.Name);
+        
+     //insert opportunity
+     Opportunity Opp=new Opportunity();
+        Opp.Name='Demo Opportunity';
+        Opp.StageName='Closed Released';
+        Opp.CloseDate=system.today();
+        Opp.Special_Instructions__c='Test';
+        Opp.ACT_Serial_Number__c='ACT11990';
+        Opp.Amount=1200;
+        Opp.account=acc;
+        Opp.Dealer__c=acc.id;
+        opp.stagename='Qualification';
+        insert Opp;
+        system.assertequals('Demo Opportunity',Opp.Name);
+     
+     //insert quote and quoteline item
+     Id PricebookId=Test.getStandardPricebookId(); 
+     system.debug(PricebookId);
+        PricebookEntry pbID = [select Id,Product2Id from PricebookEntry where pricebook2id=:PricebookId and isActive = True limit 1];
+        
+        SBQQ__Quote__c Qot=new SBQQ__Quote__c();
+        Qot.SBQQ__PricebookId__c=PricebookId;
+        Qot.SBQQ__Opportunity2__c=opp.id;
+        Qot.SBQQ__Primary__c=true;
+        insert Qot;
+        system.assertequals(PricebookId,Qot.SBQQ__PricebookId__c);
+        
+        
+        
+      //insert production
+      Production__c Prds=new Production__c();
+        Prds.Account__c=Acc.id;
+        Prds.Opportunity_Name__c=Opp.id;
+        Prds.Status__c='To Be Processed';
+        Prds.Stock_Outline_Summary__c='Test';
+       //  Prds.Production_Type__c='ACT Stock Unit On Order';
+        Prds.Special_Instructions__c='Test';
+        Prds.Special_Instructions_Update__c='Test';
+        insert Prds;
+        system.assertequals(Opp.id,Prds.Opportunity_Name__c);
+        Prds.Status__c='ACT New Units';
+        update prds;
+        system.assertequals('ACT New Units',Prds.Status__c);
+        
+        test.starttest();
+        PageReference pageref = Page.Buildsheetremake;
+        Test.setCurrentPage(pageref);
+        BuildSheetController controller=new BuildSheetController();
+        
+        controller.getItems();
+        controller.actSerialNumber='ACT11990';
+        controller.getItems();
+        controller.actSerialNumber='ACT1199';
+        controller.getItems();
+        controller.actSerialNumber='';
+        controller.getItems();
+        Production__c prod=[Select id,name from Production__c where id=:Prds.id];
+        
+        controller.Slectedproduction=prod.id;
+        controller.quotes();
+        
+        controller.pdf();
+     
+        test.stoptest();
+  }
+  
+/*====================================================
+*Method Name     : method3
+*Description     : This method test BuilSheetController else conditions.
+*Arguments       : No Argument
+====================================================*/
+    
+      public @isTest static void method3(){
+     
+     //insert account 
+      Account Acc=new Account();
+        Acc.Name='Demo Customer';
+        Acc.customer_type__c='Dealer';
+        insert acc;
+        system.assertequals('Demo Customer',acc.Name);
+        
+     //insert opportunity
+     Opportunity Opp=new Opportunity();
+        Opp.Name='Demo Opportunity';
+        Opp.StageName='Closed Released';
+        Opp.CloseDate=system.today();
+        Opp.Special_Instructions__c='Test';
+        Opp.ACT_Serial_Number__c='ACT11990';
+        Opp.Amount=1200;
+        Opp.account=acc;
+        Opp.Dealer__c=acc.id;
+        opp.stagename='Qualification';
+        insert Opp;
+        system.assertequals('Demo Opportunity',Opp.Name);
+     
+     //insert quote and quoteline item
+     Id PricebookId=Test.getStandardPricebookId(); 
+     system.debug(PricebookId);
+        PricebookEntry pbID = [select Id,Product2Id from PricebookEntry where pricebook2id=:PricebookId and isActive = True limit 1];
+        
+        SBQQ__Quote__c Qot=new SBQQ__Quote__c();
+        Qot.SBQQ__PricebookId__c=PricebookId;
+        Qot.SBQQ__Opportunity2__c=opp.id;
+        Qot.SBQQ__Primary__c=true;
+        insert Qot;
+        system.assertequals(PricebookId,Qot.SBQQ__PricebookId__c);
+        
+        
+      //insert production
+      Production__c Prds=new Production__c();
+        Prds.Account__c=Acc.id;
+        Prds.Opportunity_Name__c=Opp.id;
+        Prds.Status__c='To Be Processed';
+        Prds.Stock_Outline_Summary__c='Test';
+     //    Prds.Production_Type__c='ACT Stock Unit On Order';
+        Prds.Special_Instructions__c='Test';
+        Prds.Special_Instructions_Update__c='Test';
+        insert Prds;
+        system.assertequals(Opp.id,Prds.Opportunity_Name__c);
+        Prds.Status__c='ACT New Units';
+        update prds;
+        system.assertequals('ACT New Units',Prds.Status__c);
+        
+        test.starttest();
+        PageReference pageref = Page.Buildsheetremake;
+        Test.setCurrentPage(pageref);
+        BuildSheetController controller=new BuildSheetController();
+        
+        controller.getItems();
+        
+        controller.actSerialNumber='ACT11990';
+        controller.getItems();
+        Production__c prod=[Select id,name from Production__c where id=:Prds.id];
+        
+        controller.Slectedproduction=null;
+        
+        controller.quotes();
+        controller.SlectedQuote=Qot.id;
+        controller.pdf();
+     
+        test.stoptest();
+  }
+  
+  
+}
