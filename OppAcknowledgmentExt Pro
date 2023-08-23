@@ -1,0 +1,22 @@
+/*============================================================================================================
+*Class Name     : OppAcknowledgmentExt
+*Description    : All the implementations related to Opportunity Triggers should be handled here
+*Company        : Merfantz Technologies Pvt Ltd
+*Date           : 3rd May, 2014
+*Version        : 1.0
+*============================================================================================================*/
+
+
+public class OppAcknowledgmentExt
+{
+    Public Opportunity oppObj {get; set;}
+    public OppAcknowledgmentExt(ApexPages.StandardController c) 
+    {
+        oppObj  = (Opportunity)c.getRecord(); 
+        oppObj  = [
+                  SELECT Id,
+                  Ship_Date__c,Name, Ship_To_Address__c, Freight_Instructions__c, Line_Item_Count__c, TotalAmount__c,
+                  (SELECT Quantity,product2.Name,product2.Description,UnitPrice,TotalPrice from OpportunityLineItems), Vendor_Incoming_PO__c FROM Opportunity WHERE Id =: oppObj.Id
+                  ];
+    }
+}
